@@ -16,6 +16,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 set(CMAKE_CXX_COMPILER "/usr/bin/g++-11")
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-std=c++20 -fPIC -fno-strict-aliasing -Wall ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-g -O3 -DNDEBUG")
@@ -43,3 +44,6 @@ endif()
 
 add_executable(test_log test/test_log/test.cpp)
 target_link_libraries(test_log PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_task test/test_common/test_task.cpp)
+target_link_libraries(test_task PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
