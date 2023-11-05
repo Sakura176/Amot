@@ -119,9 +119,39 @@ void test_tasks() {
 	}
 }
 
+// amot::Task<void> test_void() {
+// 	spdlog::info("test_void 1");
+// 	co_yield void;
+// 	spdlog::info("test_void 2");
+// }
+
+amot::Task<int> fibonacci() {
+	co_yield 0;
+	co_yield 1;
+
+	int a = 0;
+	int b = 1;
+	while(true) {
+		co_yield a + b;
+		b = a + b;
+		a = b - a;
+	}
+}
+
+void test_fibonacci() {
+	auto fib = fibonacci();
+	spdlog::info("fib : {}", fib.get_result());
+	fib.resume();
+	spdlog::info("fib : {}", fib.get_result());
+}
+
 int main() {
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] : %v");
 	spdlog::set_level(spdlog::level::debug);
+	spdlog::info("================== fibonacci test begin ==================");
+	test_fibonacci();
+	spdlog::info("=================== fibonacci test end ===================");
+
 	// spdlog::info("=================== task test begin ===================");
 	// test_tasks();
 	// spdlog::info("==================== task test end ====================");
@@ -130,8 +160,8 @@ int main() {
 	// test_scheduler();
 	// spdlog::info("=================== scheduler test end ===================");
 
-	spdlog::info("================== channel test begin ==================");
-	test_channel();
-	spdlog::info("=================== channel test end ===================");
+	// spdlog::info("================== channel test begin ==================");
+	// test_channel();
+	// spdlog::info("=================== channel test end ===================");
 	return 0;
 }

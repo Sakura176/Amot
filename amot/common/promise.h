@@ -57,6 +57,16 @@ struct Promise {
 		notify_callbacks();
 	}
 
+	std::suspend_always yield_value(ResultType value) {
+
+		std::lock_guard lock(completion_lock);
+		result = Result<ResultType>(std::move(value));
+		completion.notify_all();
+		// 调用回调
+		notify_callbacks();
+		return {};
+	}
+
 	void unhandled_exception() { 
 		std::lock_guard lock(completion_lock);
 		result = Result<ResultType>(std::current_exception());
@@ -164,6 +174,16 @@ struct Promise<void, Executor> {
 		result = Result<void>();
 		completion.notify_all();
 		notify_callbacks();
+	}
+
+	std::suspend_always yield_value() {
+
+		std::lock_guard lock(completion_lock);
+		result = Result<void>();
+		completion.notify_all();
+		// 调用回调
+		notify_callbacks();
+		return {};
 	}
 
 	void on_completed(std::function<void(Result<void>)> &&func) {

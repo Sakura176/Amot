@@ -82,6 +82,7 @@ public:
 	}
 
 	void shutdown(bool wait_for_complete = true) {
+		// TODO 在推出后仍然需要再调用join函数
 		is_active.store(false, std::memory_order_relaxed);
 		if (!wait_for_complete) {
 			std::unique_lock lock(queue_lock);

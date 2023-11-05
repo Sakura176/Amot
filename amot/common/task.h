@@ -23,6 +23,15 @@ struct Task {
 			handle.destroy();
 	}
 
+	void resume() {
+		if (handle)
+			handle.resume();
+	}
+
+	auto as_awaiter() {
+		return TaskAwaiter<ResultType, Executor>(std::move(*this));
+	}
+
 	ResultType get_result() {
 		return handle.promise().get_result();
 	}
@@ -75,6 +84,10 @@ struct Task<void, Executor> {
 	~Task() {
 		if (handle)
 			handle.destroy();
+	}
+
+	auto as_awaiter() {
+		return TaskAwaiter<void, Executor>(std::move(*this));
 	}
 
 	void get_result() {

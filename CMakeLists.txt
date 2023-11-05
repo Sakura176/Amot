@@ -4,9 +4,7 @@ cmake_minimum_required(VERSION 3.11)
 # Start Amot project
 # ---------------------------------------------------------------------------------------
 
-# project(Amot VERSION ${SPDLOG_VERSION} LANGUAGES CXX)
 project(amot)
-# message(STATUS "Build spdlog: ${SPDLOG_VERSION}")
 
 # ---------------------------------------------------------------------------------------
 # Set default build to release
@@ -26,7 +24,6 @@ message("  CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}: ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_
 message("------------------------------------")
 
 
-
 include_directories("${PROJECT_SOURCE_DIR}")
 
 # 编译的库在 Amot/lib 下生成
@@ -38,7 +35,6 @@ message(${PROJECT_SOURCE_DIR}/bin)
 message("----------------------------------------------")
 
 if(NOT TARGET spdlog)
-    # Stand-alone build
     find_package(spdlog REQUIRED)
 endif()
 
@@ -47,3 +43,9 @@ target_link_libraries(test_log PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
 
 add_executable(test_task test/test_common/test_task.cpp)
 target_link_libraries(test_task PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_scheduler test/test_common/test_scheduler.cpp)
+target_link_libraries(test_scheduler PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_generator test/test_common/test_generator.cpp)
+target_link_libraries(test_generator PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
