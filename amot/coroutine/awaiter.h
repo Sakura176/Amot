@@ -10,19 +10,30 @@ namespace amot {
 template <typename ResultType, typename Executor>
 struct Task;
 
+/**
+ * @brief co_await 表达式操作的对象
+ * 
+ * @tparam R 结果类别
+ */
 template <typename R>
 struct Awaiter {
 	using ResultType = R;
 
+	// 简单处理，永远挂起
 	bool await_ready() const { return false; }
 
+	// 协程挂起后调用
 	void await_suspend(std::coroutine_handle<> handle) {
+		// 记录当前协程的 handle，方便后续恢复
 		this->_handle = handle;
+		// 调用 after_suspend，逻辑由子类定义
 		after_suspend();
 	}
 
+	// 协程恢复执行后调用，返回值为co_await 表达式的返回值
 	ResultType await_resume() {
 		before_resume();
+		// 返回 co_await 的结果
 		return _result->get_or_throw();
 	}
 
@@ -48,10 +59,15 @@ struct Awaiter {
 		_executor = executor;
 	}
 protected:
+	/**
+	 * @brief 虚函数，在子类中实现具体逻辑
+	 * 
+	 */
 	virtual void after_suspend() {}
 
 	virtual void before_resume() {}
 private:
+	// 方便用调度器调度任意逻辑
 	void dispatch(std::function<void()> &&f) {
 		if (_executor) {
 			_executor->execute(std::move(f));

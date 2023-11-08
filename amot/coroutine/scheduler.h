@@ -118,7 +118,6 @@ private:
 			if (delay > 0) {
 				// 条件变量进行等待
 				auto status = queue_condition.wait_for(lock, std::chrono::milliseconds(delay));
-				// TODO 此处未理解
 				if (status != std::cv_status::timeout) {
 					continue;
 				}

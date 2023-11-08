@@ -90,6 +90,7 @@ struct Task<void, Executor> {
 		return TaskAwaiter<void, Executor>(std::move(*this));
 	}
 
+	// void偏特化无返回值，该函数用于阻塞当前线程等待协程执行完成
 	void get_result() {
 		handle.promise().get_result();
 	}

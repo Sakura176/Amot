@@ -3,10 +3,10 @@
 #include <thread>
 #include <spdlog/spdlog.h>
 
-#include "amot/common/task.h"
-#include "amot/common/executor.h"
-#include "amot/common/scheduler.h"
-#include "amot/common/channel.h"
+#include "amot/coroutine/task.h"
+#include "amot/coroutine/executor.h"
+#include "amot/coroutine/scheduler.h"
+#include "amot/coroutine/channel.h"
 
 using namespace std::chrono_literals;
 

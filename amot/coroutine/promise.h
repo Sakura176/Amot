@@ -69,6 +69,7 @@ struct Promise {
 
 	void unhandled_exception() { 
 		std::lock_guard lock(completion_lock);
+		// 将异常存入 result
 		result = Result<ResultType>(std::current_exception());
 		completion.notify_all();
 		// 调用回调
@@ -135,7 +136,7 @@ struct Promise<void, Executor> {
 
 	template <typename _ResultType, typename _Executor>
 	TaskAwaiter<_ResultType, _Executor> await_transform(Task<_ResultType, _Executor> &&task) {
-		return await_transform(TaskAwaiter<_ResultType, _Executor>(&executor, std::move(task)));
+		return await_transform(TaskAwaiter<_ResultType, _Executor>(std::move(task)));
 	}
 
 	template<typename _Rep, typename _Period>

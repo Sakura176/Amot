@@ -38,6 +38,17 @@ if(NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
 
+set(LIB_SRC
+    amot/common/fd_manager.cpp
+    amot/common/util.cpp
+    amot/socket/address.cpp
+    amot/socket/socket.cpp
+    )
+add_library(amot SHARED ${LIB_SRC})
+set(LIB_LIB
+    amot)
+
+
 add_executable(test_log test/test_log/test.cpp)
 target_link_libraries(test_log PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 
@@ -49,3 +60,12 @@ target_link_libraries(test_scheduler PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:w
 
 add_executable(test_generator test/test_common/test_generator.cpp)
 target_link_libraries(test_generator PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_address test/test_socket/test_address.cpp amot/socket/address.cpp)
+target_link_libraries(test_address PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_socket_client test/test_socket/test_socket_client.cpp)
+target_link_libraries(test_socket_client PRIVATE ${LIB_LIB} spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_socket_server test/test_socket/test_socket_server.cpp)
+target_link_libraries(test_socket_server PRIVATE ${LIB_LIB} spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
