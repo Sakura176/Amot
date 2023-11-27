@@ -97,12 +97,26 @@ amot::Task<int, amot::NewThreadExecutor> simple_task3() {
 
 amot::Task<int, amot::LooperExecutor> simple_task() {
 	spdlog::info("task start ...");
+	using namespace std::chrono_literals;
+	co_await 100ms;
+	spdlog::info("after 100ms ...");
 	auto result2 = co_await simple_task2();
-	spdlog::info("returns from task2: ", result2);
+	spdlog::info("returns from task2: {}", result2);
+
+	co_await 500ms;
+	spdlog::info("after 500ms ...");
 	auto result3 = co_await simple_task3();
-	spdlog::info("returns from task3: ", result3);
+	spdlog::info("returns from task3: {}", result3);
 	co_return 1 + result2 + result3;
 }
+
+void test_non() {
+	spdlog::info("test non");
+}
+
+// amot::Task<void> test_void() {
+// 	co_await test_non();
+// }
 
 void test_tasks() {
 	auto simpleTask = simple_task();
@@ -148,13 +162,13 @@ void test_fibonacci() {
 int main() {
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] : %v");
 	spdlog::set_level(spdlog::level::debug);
-	spdlog::info("================== fibonacci test begin ==================");
-	test_fibonacci();
-	spdlog::info("=================== fibonacci test end ===================");
+	// spdlog::info("================== fibonacci test begin ==================");
+	// test_fibonacci();
+	// spdlog::info("=================== fibonacci test end ===================");
 
-	// spdlog::info("=================== task test begin ===================");
-	// test_tasks();
-	// spdlog::info("==================== task test end ====================");
+	spdlog::info("=================== task test begin ===================");
+	test_tasks();
+	spdlog::info("==================== task test end ====================");
 
 	// spdlog::info("================== scheduler test begin ==================");
 	// test_scheduler();

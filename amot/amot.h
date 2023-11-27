@@ -4,8 +4,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-#include <amot/common/address.h>
-#include <amot/common/socket.h>
+#include <amot/socket/address.h>
+#include <amot/socket/socket.h>
 
 namespace amot {
 

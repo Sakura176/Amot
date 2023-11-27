@@ -68,7 +68,13 @@ public:
 		join();
 	}
 
-	void execute(std::function<void()> &&func, long long delay) {
+	/**
+	 * @brief 
+	 * 
+	 * @param func 			需运行的函数
+	 * @param delay 		延时时间，毫秒
+	 */
+	void execute(std::function<void()> &&func, long long delay = 0) {
 		delay = delay < 0 ? 0 : delay;
 		std::unique_lock lock(queue_lock);
 		if (is_active.load(std::memory_order_relaxed)) {
@@ -82,7 +88,7 @@ public:
 	}
 
 	void shutdown(bool wait_for_complete = true) {
-		// TODO 在推出后仍然需要再调用join函数
+		// TODO 在退出后仍然需要再调用join函数
 		is_active.store(false, std::memory_order_relaxed);
 		if (!wait_for_complete) {
 			std::unique_lock lock(queue_lock);

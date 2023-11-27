@@ -1,8 +1,10 @@
 #pragma once
 
 #include <coroutine>
+#include <optional>
 
 #include "executor.h"
+#include "result.h"
 #include "scheduler.h"
 
 namespace amot {

@@ -12,6 +12,7 @@
 
 namespace amot {
 
+// 类类型检查，用于Awaiter的子类，避免出现非Awaiter子类传入taskpromise
 template<typename AwaiterImpl, typename R>
 concept AwaiterImplRestriction = std::is_base_of<Awaiter<R>, AwaiterImpl>::value;
 

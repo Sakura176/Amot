@@ -1,7 +1,7 @@
 #pragma once
 
-#define SERVER_LITTLE_ENDIAN 1
-#define SERVER_BIG_ENDIAN 2
+#define AMOT_LITTLE_ENDIAN 1
+#define AMOT_BIG_ENDIAN 2
 
 #include <byteswap.h>
 #include <stdint.h>
@@ -35,12 +35,12 @@ byteswap(T value) {
 }
 
 #if BYTE_ORDER == BIG_ENDIAN
-#define SERVER_BYTE_ORDER SERVER_BIG_ENDIAN
+#define AMOT_BYTE_ORDER AMOT_BIG_ENDIAN
 #else
-#define SERVER_BYTE_ORDER SERVER_LITTLE_ENDIAN
+#define AMOT_BYTE_ORDER AMOT_LITTLE_ENDIAN
 #endif
 
-#if SERVER_BYTE_ORDER == SERVER_BIG_ENDIAN
+#if AMOT_BYTE_ORDER == AMOT_BIG_ENDIAN
 /**
  * @brief 只在小端机器上执行byteswap,在大端机器上什么都不做
  */
