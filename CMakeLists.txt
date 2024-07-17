@@ -23,15 +23,20 @@ message("------------ Cxx flags -------------")
 message("  CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}: ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 message("------------------------------------")
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+    message("COMPILE DEFINITIONS: SPDLOG_ACTIVE_LEVEL")
+endif()
+
 
 include_directories("${PROJECT_SOURCE_DIR}")
 
 # 编译的库在 Amot/lib 下生成
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE})
 message("------------ LIBRARY_OUTPUT_PATH -------------")
-message(${PROJECT_SOURCE_DIR}/lib)
-message(${PROJECT_SOURCE_DIR}/bin)
+message(${PROJECT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
+message(${PROJECT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/bin)
 message("----------------------------------------------")
 
 if(NOT TARGET spdlog)
@@ -45,7 +50,12 @@ endif()
 
 add_executable(amot_test test/amot_tests/test.cpp)
 target_link_libraries(amot_test PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
 add_executable(test_task test/amot_tests/test_task.cpp)
 target_link_libraries(test_task PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
 add_executable(test_epoll_file test/amot_tests/test_epoll_file.cpp)
 target_link_libraries(test_epoll_file PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_step12 test/amot_tests/test_step12.cpp)
+target_link_libraries(test_step12 PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)

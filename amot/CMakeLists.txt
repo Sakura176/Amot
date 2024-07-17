@@ -3,6 +3,11 @@ if(NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+endif()
+
+
 set(LIB_SRC
     amot/common/epoller.cpp
     )

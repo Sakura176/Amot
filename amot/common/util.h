@@ -1,12 +1,11 @@
 #pragma once
 
+#include "singleton.h"
 #include <cxxabi.h>
 #include <iostream>
-#include <vector>
-#include <stdio.h>
 #include <stdint.h>
-
-#include "singleton.h"
+#include <stdio.h>
+#include <vector>
 
 namespace amot {
 /**
@@ -19,29 +18,32 @@ uint32_t GetFiberId();
 uint64_t GetCurrentMS();
 
 void Backtrace(std::vector<std::string> &bt, int size = 64, int skip = 1);
-std::string BacktraceToString(int size = 64, int skip = 2, const std::string& prefix = "");
+std::string BacktraceToString(int size = 64, int skip = 2,
+                              std::string const &prefix = "");
 
-template<class T>
-const char* TypeToName() {
-	static const char* s_name = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr);
-	return s_name;
+template <class T>
+char const *TypeToName() {
+    static char const *s_name =
+        abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr);
+    return s_name;
 }
 
-class Nocopyable
-{
+class Nocopyable {
 public:
-	Nocopyable() = default;
+    Nocopyable() = default;
 
-	~Nocopyable() = default;
+    ~Nocopyable() = default;
 
-	Nocopyable(const Nocopyable&) = delete;
-	
-	Nocopyable& operator=(const Nocopyable&) = delete;
+    Nocopyable(Nocopyable const &) = delete;
+
+    Nocopyable &operator=(Nocopyable const &) = delete;
 };
 
-
+auto CheckError(int res) {
+    if (res == -1) [[unlikely]] {
+        throw std::system_error(errno, std::system_category());
+    }
+    return res;
 }
 
-
-
-
+} // namespace amot

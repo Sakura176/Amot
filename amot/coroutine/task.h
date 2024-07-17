@@ -1,131 +1,134 @@
 #pragma once
 
-#include <coroutine>
-
 #include "promise.h"
+#include <coroutine>
+#include <spdlog/spdlog.h>
 
 namespace amot {
 
 template <typename ResultType, typename Executor = NoopExecutor>
 struct Task {
-	using promise_type = Promise<ResultType, Executor>;
-	using Handle = std::coroutine_handle<promise_type>;
+    using promise_type = Promise<ResultType, Executor>;
+    using Handle = std::coroutine_handle<promise_type>;
 
-	explicit Task(Handle handle) noexcept : handle(handle) {}
+    explicit Task(Handle handle) noexcept : handle(handle) {}
 
-	Task(Task &) = delete;
-	Task(Task &&task) noexcept : handle(std::exchange(task.handle, {})) {}
+    Task(Task &) = delete;
 
-	Task &operator=(Task &) = delete;
+    Task(Task &&task) noexcept : handle(std::exchange(task.handle, {})) {}
 
-	~Task() {
-		if (handle)
-			handle.destroy();
-	}
+    Task &operator=(Task &) = delete;
 
-	void resume() {
-		if (handle)
-			handle.resume();
-	}
+    ~Task() {
+        if (handle) {
+            handle.destroy();
+        }
+    }
 
-	auto as_awaiter() {
-		return TaskAwaiter<ResultType, Executor>(std::move(*this));
-	}
+    void resume() {
+        if (handle) {
+            handle.resume();
+        }
+    }
 
-	ResultType get_result() {
-		return handle.promise().get_result();
-	}
+    auto as_awaiter() {
+        return TaskAwaiter<ResultType, Executor>(std::move(*this));
+    }
 
-	Task& then(std::function<void(ResultType)> &&func) {
-		handle.promise().on_completed([func](auto result) {
-			try {
-				func(result.get_or_throw());
-			} catch (std::exception &e) {
-				// ignore
-			}
-		});
-		return *this;
-	}
+    ResultType get_result() {
+        return handle.promise().get_result();
+    }
 
-	Task& catching(std::function<void(std::exception &)> &&func) {
-		handle.promise().on_completed([func](auto result) {
-			try {
-				result.get_or_throw();
-			} catch (std::exception &e) {
-				func(e);
-			}
-		});
-		return *this;
-	}
+    Task &then(std::function<void(ResultType)> &&func) {
+        handle.promise().on_completed([func](auto result) {
+            try {
+                func(result.get_or_throw());
+            } catch (std::exception &e) {
+                // ignore
+            }
+        });
+        return *this;
+    }
 
-	Task& finally(std::function<void()> &&func) {
-		handle.promise().on_completed([func](auto result) {
-			func();
-		});
-		return *this;
-	}
+    Task &catching(std::function<void(std::exception &)> &&func) {
+        handle.promise().on_completed([func](auto result) {
+            try {
+                result.get_or_throw();
+            } catch (std::exception &e) {
+                func(e);
+            }
+        });
+        return *this;
+    }
+
+    Task &finally(std::function<void()> &&func) {
+        handle.promise().on_completed([func](auto result) { func(); });
+        return *this;
+    }
 
 private:
-	Handle handle;
+    Handle handle;
 };
 
 template <typename Executor>
 struct Task<void, Executor> {
-	using promise_type = Promise<void, Executor>;
-	using Handle = std::coroutine_handle<promise_type>;
+    using promise_type = Promise<void, Executor>;
+    using Handle = std::coroutine_handle<promise_type>;
 
-	explicit Task(Handle handle) noexcept : handle(handle) {}
+    explicit Task(Handle handle) noexcept : handle(handle) {}
 
-	Task(Task &) = delete;
-	Task(Task &&task) noexcept : handle(std::exchange(task.handle, {})) {}
+    Task(Task &) = delete;
 
-	Task &operator=(Task &) = delete;
+    Task(Task &&task) noexcept : handle(std::exchange(task.handle, {})) {}
 
-	~Task() {
-		if (handle)
-			handle.destroy();
-	}
+    Task &operator=(Task &) = delete;
 
-	auto as_awaiter() {
-		return TaskAwaiter<void, Executor>(std::move(*this));
-	}
+    ~Task() {
+        if (handle) {
+            handle.destroy();
+        }
+    }
 
-	// void偏特化无返回值，该函数用于阻塞当前线程等待协程执行完成
-	void get_result() {
-		handle.promise().get_result();
-	}
+    auto as_awaiter() {
+        return TaskAwaiter<void, Executor>(std::move(*this));
+    }
 
-	Task& then(std::function<void()> &&func) {
-		handle.promise().on_completed([func](auto result) {
-			try {
-				result.get_or_throw();
-				func();
-			} catch (std::exception &e) {
-				// ignore
-			}
-		});
-		return *this;
-	}
+    // void偏特化无返回值，该函数用于阻塞当前线程等待协程执行完成
+    void get_result() {
+        spdlog::trace("void task get_result!!!");
+        handle.promise().get_result();
+    }
 
-	Task& catching(std::function<void(std::exception &)> &&func) {
-		handle.promise().on_completed([func](auto result) {
-			try {
-				result.get_or_throw();
-			} catch (std::exception &e) {
-				func(e);
-			}
-		});
-		return *this;
-	}
+    Task &then(std::function<void()> &&func) {
+        handle.promise().on_completed([func](auto result) {
+            try {
+                result.get_or_throw();
+                func();
+            } catch (std::exception &e) {
+                // ignore
+            }
+        });
+        return *this;
+    }
 
-	Task& finally(std::function<void()> &&func) {
-		handle.promise().on_completed([func](auto result) {
-			func();
-		});
-		return *this;
-	}
+    Task &catching(std::function<void(std::exception &)> &&func) {
+        handle.promise().on_completed([func](auto result) {
+            try {
+                result.get_or_throw();
+            } catch (std::exception &e) {
+                func(e);
+            }
+        });
+        return *this;
+    }
+
+    Task &finally(std::function<void()> &&func) {
+        handle.promise().on_completed([func](auto result) { func(); });
+        return *this;
+    }
 
 private:
-	Handle handle;
+    Handle handle;
 };
-}
+} // namespace amot
+
