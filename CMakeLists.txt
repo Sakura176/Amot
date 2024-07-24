@@ -59,3 +59,6 @@ target_link_libraries(test_epoll_file PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:
 
 add_executable(test_step12 test/amot_tests/test_step12.cpp)
 target_link_libraries(test_step12 PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+
+add_executable(test_http test/amot_tests/test_http.cpp)
+target_link_libraries(test_http PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
