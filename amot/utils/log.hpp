@@ -76,6 +76,7 @@ public:
     }
 };
 
+// TODO: 考虑使用更优方案，不应通过环境变量获取
 inline log_level g_max_level = []() -> log_level {
     if (auto level = std::getenv("LOG_LEVEL")) {
         return details::log_level_from_name(level);
@@ -87,11 +88,19 @@ inline log_level g_max_level = []() -> log_level {
 #endif
 }();
 
+// TODO: 日志文件写入时期需考虑
 inline std::ofstream g_log_file = []() -> std::ofstream {
     if (auto path = std::getenv("LOG_FILE")) {
         return std::ofstream(path, std::ios::app);
     }
     return std::ofstream();
+}();
+
+inline bool g_console_enable = []() -> bool {
+    if (auto console_enable = std::getenv("LOG_CONSOLE")) {
+        return console_enable;
+    }
+    return true;
 }();
 
 inline void output_log(log_level level, std::string msg,
@@ -104,10 +113,11 @@ inline void output_log(log_level level, std::string msg,
     msg = std::format("[{:%Y-%m-%d %H:%M:%S}] [T: {:06}] {}:{} [{}] {}", now,
                       thread_id % 100000, file_path.substr(14), loc.line(),
                       details::log_level_name(level), msg);
+    // TODO: 文件和屏幕输出需要增加控制选项
     if (g_log_file) {
         g_log_file << msg + '\n';
     }
-    if (level >= g_max_level) {
+    if (g_console_enable && level >= g_max_level) {
         std::cout << _LOG_IF_HAS_ANSI_COLORS(
                          k_level_ansi_colors[(std::uint8_t)level] +)
                              msg _LOG_IF_HAS_ANSI_COLORS(+k_reset_ansi_color) +
@@ -117,12 +127,17 @@ inline void output_log(log_level level, std::string msg,
 
 } // namespace details
 
+// TODO: 需增加日志清除功能
 inline void set_log_file(std::string path) {
-    details::g_log_file = std::ofstream(path, std::ios::app);
+    details::g_log_file = std::ofstream(path);
 }
 
 inline void set_log_level(log_level level) {
     details::g_max_level = level;
+}
+
+inline void set_console_enable(bool console_enable) {
+    details::g_console_enable = console_enable;
 }
 
 template <typename... Args>

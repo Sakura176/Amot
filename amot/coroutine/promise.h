@@ -1,7 +1,5 @@
 #pragma once
 
-#include "amot/async/epoll_file_awaiter.h"
-#include "amot/common/log.h"
 #include "awaiter.h"
 #include "result.h"
 #include <condition_variable>
@@ -52,11 +50,6 @@ struct Promise {
         return await_transform(SleepAwaiter(
             std::chrono::duration_cast<std::chrono::milliseconds>(duration)
                 .count()));
-    }
-
-    EpollFileAwaiter<ResultType> await_transform(EpollFile &&epoll_file) {
-        SPDLOG_TRACE("await_transform epoll_file!!!");
-        return await_transform(EpollFileAwaiter<ResultType>(epoll_file));
     }
 
     template <typename AwaiterImpl>
