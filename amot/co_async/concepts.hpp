@@ -1,6 +1,6 @@
 #pragma once
 
-#include "amot/coroutine/uninitialized.hpp"
+#include "amot/co_async/uninitialized.hpp"
 #include <coroutine>
 
 template <class A>

@@ -49,7 +49,7 @@ if(BUILD_TESTING)
     add_subdirectory(test)
 endif()
 
-add_executable(step_test test/amot_tests/test_step5.cpp)
+add_executable(step_test test/amot_tests/test_step7.cpp)
 # target_link_libraries(amot_test PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 
 

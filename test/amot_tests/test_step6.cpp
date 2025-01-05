@@ -1,15 +1,14 @@
 /*
- * @breif 简单协程实现，实现多个函数同时加入调度器
+ * @breif 简单协程实现，实现调度器内析构协程的删除
  */
 #include "amot/coroutine/concepts.hpp"
 #include "amot/coroutine/uninitialized.hpp"
 #include "amot/utils/log.hpp"
+#include "amot/utils/rbtree.hpp"
 #include <chrono>
 #include <coroutine>
 #include <cstddef>
-#include <deque>
 #include <exception>
-#include <queue>
 #include <thread>
 #include <utility>
 
@@ -119,9 +118,9 @@ struct Promise<void> {
     std::coroutine_handle<> m_previou{};
 };
 
-template <class T = void>
+template <class T = void, class P = Promise<T>>
 struct Task {
-    using promise_type = Promise<T>;
+    using promise_type = P;
 
     Task(std::coroutine_handle<promise_type> handle) noexcept
         : m_handle(handle) {
@@ -165,54 +164,49 @@ struct Task {
     std::coroutine_handle<promise_type> m_handle;
 };
 
+struct SleepUntilPromise : RbTree<SleepUntilPromise>::RbNode, Promise<void> {
+    std::chrono::system_clock::time_point m_expire_time;
+
+    auto get_return_object() {
+        return std::coroutine_handle<SleepUntilPromise>::from_promise(*this);
+    }
+
+    SleepUntilPromise &operator=(SleepUntilPromise &&) = delete;
+
+    friend bool operator<(SleepUntilPromise const &lhs,
+                          SleepUntilPromise const &rhs) noexcept {
+        return lhs.m_expire_time < rhs.m_expire_time;
+    }
+};
+
 struct Scheduler {
-    struct TimerEntry {
-        std::chrono::system_clock::time_point expire_time;
-        std::coroutine_handle<> coroutine;
+    RbTree<SleepUntilPromise> mRbTimer{};
 
-        bool operator<(TimerEntry const &that) const noexcept {
-            return expire_time > that.expire_time;
-        }
-    };
-
-    void add_task(std::coroutine_handle<> coroutine) {
-        m_ready_queue.push_front(coroutine);
+    void addTimer(SleepUntilPromise &promise) {
+        mRbTimer.insert(promise);
     }
 
-    void add_timer(std::chrono::system_clock::time_point expire_time,
-                   std::coroutine_handle<> coroutine) {
-        m_timer_heap.push({expire_time, coroutine});
-    }
-
-    void run_loop() {
-        while (!m_timer_heap.empty() || !m_ready_queue.empty()) {
-            // 队列中存在任务，则弹出任务并恢复协程
-            while (!m_ready_queue.empty()) {
-                auto coroutine = m_ready_queue.front();
-                m_ready_queue.pop_front();
-                coroutine.resume(); // 进入任务协程
-                log_info("m_ready_queue resume back");
-            }
-            log_info("before run timer");
-            // 时间堆中任务处理
-            if (!m_timer_heap.empty()) {
-                auto now = std::chrono::system_clock::now();
-                auto timer = std::move(m_timer_heap.top());
-                if (timer.expire_time < now) {
-                    m_timer_heap.pop();
-                    log_info("before timer resume");
-                    // BUG: 协程析构后再次resume会崩溃，如何判断协程是否析构
-                    timer.coroutine.resume();
-                } else {
-                    std::this_thread::sleep_until(timer.expire_time);
+    void run(std::coroutine_handle<> coroutine) {
+        while (!coroutine.done()) {
+            coroutine.resume();
+            while (!mRbTimer.empty()) {
+                if (!mRbTimer.empty()) {
+                    auto now = std::chrono::system_clock::now();
+                    auto &promise = mRbTimer.front();
+                    if (promise.m_expire_time < now) {
+                        mRbTimer.erase(promise);
+                        std::coroutine_handle<SleepUntilPromise>::from_promise(
+                            promise)
+                            .resume();
+                    } else {
+                        std::this_thread::sleep_until(promise.m_expire_time);
+                    }
                 }
             }
         }
     }
 
     Scheduler &operator=(Scheduler &&) = delete;
-    std::deque<std::coroutine_handle<>> m_ready_queue; // 存储普通协程句柄
-    std::priority_queue<TimerEntry> m_timer_heap;      // 存储时间点和协程句柄
 };
 
 Scheduler &get_scheduler() {
@@ -227,19 +221,24 @@ struct SleepAwaiter {
         return false;
     }
 
-    void await_suspend(std::coroutine_handle<> coroutine) const {
-        get_scheduler().add_timer(m_expire_time, coroutine);
+    void
+    await_suspend(std::coroutine_handle<SleepUntilPromise> coroutine) const {
+        auto &promise = coroutine.promise();
+        promise.m_expire_time = m_expire_time;
+        get_scheduler().addTimer(promise);
     }
 
     void await_resume() const noexcept {}
 };
 
-Task<void> sleep_util(std::chrono::system_clock::time_point expire_time) {
+Task<void, SleepUntilPromise>
+sleep_util(std::chrono::system_clock::time_point expire_time) {
     co_await SleepAwaiter(expire_time);
     co_return;
 }
 
-Task<void> sleep_for(std::chrono::system_clock::duration duration) {
+Task<void, SleepUntilPromise>
+sleep_for(std::chrono::system_clock::duration duration) {
     co_await SleepAwaiter(std::chrono::system_clock::now() + duration);
     co_return;
 }
@@ -308,13 +307,12 @@ struct WhenAllAwaiter {
         }
         m_control.m_previous = coroutine;
         // 从第二个元素开始遍历容器，将任务加入到调度器
-        for (auto const &t: m_tasks.subspan(1)) {
-            log_info("add task!");
-            get_scheduler().add_task(t.m_coroutine);
+        for (auto const &t: m_tasks.subspan(0, m_tasks.size() - 1)) {
+            t.m_coroutine.resume();
         }
         log_info("push task finish!");
         // 返回第一个任务协程句柄，因此无需将该任务加入调度器
-        return m_tasks.front().m_coroutine;
+        return m_tasks.back().m_coroutine;
     }
 
     void await_resume() const {
@@ -425,10 +423,10 @@ struct WhenAnyAwaiter {
             return coroutine;
         }
         m_control.m_previous = coroutine;
-        for (auto const &t: m_tasks.subspan(1)) {
-            get_scheduler().add_task(t.m_coroutine);
+        for (auto const &t: m_tasks.subspan(0, m_tasks.size() - 1)) {
+            t.m_coroutine.resume();
         }
-        return m_tasks.front().m_coroutine;
+        return m_tasks.back().m_coroutine;
     }
 
     void await_resume() const {
@@ -475,7 +473,7 @@ whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
 
 template <Awaitable... Ts>
     requires(sizeof...(Ts) != 0)
-auto whenAny(Ts &&...ts) {
+auto when_any(Ts &&...ts) {
     return whenAnyImpl(std::make_index_sequence<sizeof...(Ts)>{},
                        std::forward<Ts>(ts)...);
 }
@@ -503,23 +501,22 @@ Task<int> hello3() {
 
 Task<int> hello4() {
     log_info("hello4开始睡1秒");
-    co_await sleep_for(1s); // 2s 等价于 std::chrono::seconds(2)
-    log_info("hello1睡醒了");
-    co_return 3;
+    co_await sleep_for(3s); // 2s 等价于 std::chrono::seconds(2)
+    log_info("hello4睡醒了");
+    co_return 4;
 }
 
 Task<int> hello() {
     log_info("hello 开始等1和2");
-    auto v = co_await whenAny(hello4(), hello3(), hello1(), hello2());
+    auto v = co_await when_any(hello1(), hello2(), hello3());
     log_info("hello看到{}睡醒了", (int)v.index() + 1);
+    // BUG: 该处只能取首个元素，当when_any中执行的非首个元素时会崩溃
     co_return std::get<0>(v);
 }
 
 int main() {
     auto t = hello();
-    auto t1 = hello4();
-    get_scheduler().add_task(t);
-    get_scheduler().run_loop();
+    get_scheduler().run(t);
     log_info("主函数中得到hello结果: {}", t.m_handle.promise().result());
     return 0;
 }
