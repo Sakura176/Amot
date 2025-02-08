@@ -1,8 +1,8 @@
 /*
  * @breif 简单协程实现，实现调度器内析构协程的删除
  */
-#include "amot/coroutine/concepts.hpp"
-#include "amot/coroutine/uninitialized.hpp"
+#include "amot/co_async/concepts.hpp"
+#include "amot/co_async/uninitialized.hpp"
 #include "amot/utils/log.hpp"
 #include "amot/utils/rbtree.hpp"
 #include <chrono>

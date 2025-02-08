@@ -1,8 +1,8 @@
 /*
  * @breif 简单协程实现，实现多个函数同时加入调度器
  */
-#include "amot/coroutine/concepts.hpp"
-#include "amot/coroutine/uninitialized.hpp"
+#include "amot/co_async/concepts.hpp"
+#include "amot/co_async/uninitialized.hpp"
 #include "amot/utils/log.hpp"
 #include <chrono>
 #include <coroutine>
@@ -421,6 +421,7 @@ struct WhenAnyAwaiter {
 
     std::coroutine_handle<>
     await_suspend(std::coroutine_handle<> coroutine) const {
+        log_info("WhenAnyAwaiter await_suspend");
         if (m_tasks.empty()) {
             return coroutine;
         }
@@ -444,6 +445,7 @@ struct WhenAnyAwaiter {
 template <class T>
 ReturnPreviousTask whenAnyHelper(auto const &t, WhenAnyCtlBlock &control,
                                  Uninitialized<T> &result, std::size_t index) {
+    log_info("whenAnyHelper");
     try {
         result.put_value(co_await t);
     } catch (...) {
@@ -462,7 +464,9 @@ whenAnyImpl(std::index_sequence<Is...>, Ts &&...ts) {
     std::tuple<Uninitialized<typename AwaitableTraits<Ts>::RetType>...> result;
     ReturnPreviousTask taskArray[]{
         whenAnyHelper(ts, control, std::get<Is>(result), Is)...};
+    log_info("before WhenAnyAwaiter");
     co_await WhenAnyAwaiter(control, taskArray);
+    log_info("after WhenAnyAwaiter");
     Uninitialized<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>>
         varResult;
     ((control.m_index == Is &&
@@ -511,7 +515,7 @@ Task<int> hello4() {
 Task<int> hello() {
     log_info("hello 开始等1和2");
     auto v = co_await whenAny(hello4(), hello3(), hello1(), hello2());
-    log_info("hello看到{}睡醒了", (int)v.index() + 1);
+    // log_info("hello看到{}睡醒了", (int)v.index() + 1);
     co_return std::get<0>(v);
 }
 

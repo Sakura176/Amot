@@ -1,5 +1,7 @@
 #include "amot/utils/log.hpp"
+#include "amot/utils/rbtree.hpp"
 #include <cstring>
+#include <queue>
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
 
@@ -63,7 +65,37 @@ void normal_read() {
     }
 }
 
+struct Test : RbTree<Test>::RbNode {
+    int val;
+
+    Test() {
+        log_info("Test");
+    }
+
+    ~Test() {
+        log_info("~Test");
+    }
+
+    bool operator<(Test const &that) const noexcept {
+        return val > that.val;
+    }
+};
+
+void normal() {
+    Test test;
+    std::priority_queue<Test> que;
+    que.push(test);
+    que.pop();
+}
+
+void test_rbtree() {
+    Test test;
+    RbTree<Test> tree;
+    tree.insert(test);
+    tree.erase(test);
+}
+
 int main(int argc, char *argv[]) {
-    normal_read();
+    test_rbtree();
     return 0;
 }

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "amot/co_async/previous_awaiter.hpp"
+#include "amot/co_async/uninitialized.hpp"
 #include "amot/utils/log.hpp"
-#include "co_async/uninitialized.hpp"
 #include <coroutine>
 
 namespace amot {
@@ -55,12 +55,12 @@ struct Promise {
 template <>
 struct Promise<void> {
     std::suspend_always initial_suspend() noexcept {
-        log_debug("Promise initial_suspend");
+        // log_debug("Promise initial_suspend");
         return std::suspend_always{};
     }
 
     auto final_suspend() noexcept {
-        log_debug("Promise final_suspend");
+        // log_debug("Promise final_suspend");
         return PreviousAwaiter(m_previous);
     }
 
@@ -90,28 +90,28 @@ struct [[nodiscard]] Task {
 
     Task(std::coroutine_handle<promise_type> handle) noexcept
         : m_handle(handle) {
-        log_debug("Task");
+        // log_debug("Task");
     }
 
     ~Task() {
-        log_debug("~Task");
+        // log_debug("~Task");
         m_handle.destroy();
     }
 
     struct Awaiter {
         bool await_ready() noexcept {
-            log_debug("into await_ready");
+            // log_debug("into await_ready");
             return false;
         }
 
         auto await_suspend(std::coroutine_handle<> handle) noexcept {
-            log_debug("into await_suspend");
+            // log_debug("into await_suspend");
             _handle.promise().m_previous = handle;
             return _handle;
         }
 
         T await_resume() noexcept {
-            log_debug("into await_resume");
+            // log_debug("into await_resume");
             return _handle.promise().result();
         }
 
@@ -119,7 +119,7 @@ struct [[nodiscard]] Task {
     };
 
     auto operator co_await() const {
-        log_debug("Awaiter co_await");
+        // log_debug("Awaiter co_await");
         return Awaiter(m_handle);
     }
 

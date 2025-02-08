@@ -24,10 +24,10 @@ message("  CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}: ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_
 message("------------------------------------")
 
 set(BUILD_TESTING true)
-# if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-#     add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
-#     message("COMPILE DEFINITIONS: SPDLOG_ACTIVE_LEVEL")
-# endif()
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+    message("COMPILE DEFINITIONS: SPDLOG_ACTIVE_LEVEL")
+endif()
 
 
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -40,17 +40,17 @@ message(${PROJECT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
 message(${PROJECT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/bin)
 message("----------------------------------------------")
 
-# if(NOT TARGET spdlog)
-#     find_package(spdlog REQUIRED)
-# endif()
+if(NOT TARGET spdlog)
+    find_package(spdlog REQUIRED)
+endif()
 
 enable_testing()
 if(BUILD_TESTING)
     add_subdirectory(test)
 endif()
 
-add_executable(step_test test/amot_tests/test_step7.cpp)
-# target_link_libraries(amot_test PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
+add_executable(step_test test/amot_tests/test_step8.cpp)
+target_link_libraries(step_test PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)
 
 
 # add_executable(test_step12 test/amot_tests/test_step12.cpp)

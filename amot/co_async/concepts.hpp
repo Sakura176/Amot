@@ -3,6 +3,8 @@
 #include "amot/co_async/uninitialized.hpp"
 #include <coroutine>
 
+namespace amot {
+
 template <class A>
 concept Awaiter = requires(A a, std::coroutine_handle<> h) {
     { a.await_ready() };
@@ -28,3 +30,4 @@ template <class A>
     requires(!Awaiter<A> && Awaitable<A>)
 struct AwaitableTraits<A>
     : AwaitableTraits<decltype(std::declval<A>().operator co_await())> {};
+} // namespace amot
